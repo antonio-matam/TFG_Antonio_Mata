@@ -12,7 +12,6 @@
 #include "esp_sntp.h"
 #include <sys/time.h>
 #include <time.h>
-#include <stdint.h>
 
 static const char* TAG = "communication";
 static esp_mqtt_client_handle_t mqtt_client = NULL;
@@ -33,7 +32,6 @@ static const char* MQTT_TOPIC_ULTRASONIC = "sensors/ultrasonic";
 static const char* MQTT_TOPIC_WEIGHT     = "sensors/weight";
 static const char* MQTT_TOPIC_LASER      = "sensors/laser";
 
-
 // Prototipos internos
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                int32_t event_id, void* event_data);
@@ -42,14 +40,11 @@ static void init_sntp_and_wait(void);
 static void get_iso8601_utc(char *out, size_t out_size);
 
 void communication_init(void) {
-    // Crear EventGroup
     comm_event_group = xEventGroupCreate();
     if (comm_event_group == NULL) {
         ESP_LOGE(TAG, "Failed to create EventGroup");
-        // Continuamos, pero communication_wait_for_connection() no funcionará correctamente.
     }
 
-    // 1. Inicializar TCP/IP y Wi-Fi
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
@@ -57,23 +52,13 @@ void communication_init(void) {
     wifi_init_config_t wifi_init_cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&wifi_init_cfg));
 
-    // Registrar handler de eventos Wi-Fi e IP
     esp_event_handler_instance_t wifi_any_id_handle;
     esp_event_handler_instance_t ip_got_ip_handle;
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        WIFI_EVENT,
-        ESP_EVENT_ANY_ID,
-        &wifi_event_handler,
-        NULL,
-        &wifi_any_id_handle));
+        WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL, &wifi_any_id_handle));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        IP_EVENT,
-        IP_EVENT_STA_GOT_IP,
-        &wifi_event_handler,
-        NULL,
-        &ip_got_ip_handle));
+        IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL, &ip_got_ip_handle));
 
-    // Configurar credenciales Wi-Fi
     wifi_config_t wifi_cfg = {
         .sta = {
             .ssid = "",
@@ -88,22 +73,19 @@ void communication_init(void) {
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_LOGI(TAG, "Wi-Fi init done, waiting for IP...");
 
-    // 2. Esperar a obtención de IP
     if (comm_event_group) {
         xEventGroupWaitBits(
             comm_event_group,
             WIFI_CONNECTED_BIT,
-            pdFALSE,   // no borrar el bit
-            pdTRUE,    // esperar a que se ponga
+            pdFALSE,
+            pdTRUE,
             portMAX_DELAY
         );
         ESP_LOGI(TAG, "Wi-Fi connected, IP obtained");
     }
 
-    // 3. Inicializar SNTP y esperar sincronización de hora
     init_sntp_and_wait();
 
-    // 4. Inicializar y arrancar cliente MQTT ahora que hay red y hora sincronizada
     esp_mqtt_client_config_t mqtt_cfg = {
         .broker = {
             .address = {
@@ -123,7 +105,6 @@ void communication_init(void) {
     ESP_LOGI(TAG, "MQTT client started");
 }
 
-// Handler de eventos Wi-Fi e IP
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                int32_t event_id, void* event_data) {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
@@ -143,7 +124,6 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-// Handler de eventos MQTT
 static void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data) {
     esp_mqtt_event_handle_t event = event_data;
     switch (event->event_id) {
@@ -165,9 +145,7 @@ static void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_
     }
 }
 
-// Función para que publish_task espere Wi-Fi+MQTT antes de publicar
-void communication_wait_for_connection(void)
-{
+void communication_wait_for_connection(void) {
     if (comm_event_group == NULL) {
         ESP_LOGW(TAG, "communication_wait_for_connection: EventGroup NULL, skipping wait");
         return;
@@ -182,32 +160,18 @@ void communication_wait_for_connection(void)
     ESP_LOGI(TAG, "communication: Wi-Fi + MQTT connected, proceeding to publish");
 }
 
-// Inicializa SNTP y espera a que sincronice la hora
-static void init_sntp_and_wait(void)
-{
+static void init_sntp_and_wait(void) {
     ESP_LOGI(TAG, "SNTP: Initializing SNTP");
-
-    // Usar función no obsoleta
     esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
-
-    // Ajustar servidor NTP (puedes tomar de config si quieres)
     const char *ntp_server = "pool.ntp.org";
     esp_sntp_setservername(0, ntp_server);
     ESP_LOGI(TAG, "SNTP: server set to %s", ntp_server);
-
     esp_sntp_init();
     ESP_LOGI(TAG, "SNTP: init done, waiting for sync...");
-
-    // Esperar sincronización
-    while (true) {
-        sntp_sync_status_t status = sntp_get_sync_status();
-        if (status == SNTP_SYNC_STATUS_COMPLETED) {
-            break;
-        }
+    while (sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED) {
         ESP_LOGI(TAG, "SNTP: not yet synced, waiting 1s...");
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    // Ya sincronizado: imprimir hora en log en ISO 8601 UTC
     struct timeval tv_now;
     gettimeofday(&tv_now, NULL);
     time_t now = tv_now.tv_sec;
@@ -218,9 +182,7 @@ static void init_sntp_and_wait(void)
     ESP_LOGI(TAG, "SNTP: time synchronized: %s", buf);
 }
 
-// Helper: obtener timestamp ISO 8601 UTC
-static void get_iso8601_utc(char *out, size_t out_size)
-{
+static void get_iso8601_utc(char *out, size_t out_size) {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     time_t now = tv.tv_sec;
@@ -229,7 +191,7 @@ static void get_iso8601_utc(char *out, size_t out_size)
     strftime(out, out_size, "%Y-%m-%dT%H:%M:%SZ", &tm_utc);
 }
 
-void communication_publish(const sensor_data_t* d) {
+void communication_publish(const sensor_data_t* d_unused) {
     if (mqtt_client == NULL) {
         ESP_LOGW(TAG, "communication_publish: mqtt_client NULL, skipping");
         return;
@@ -238,21 +200,22 @@ void communication_publish(const sensor_data_t* d) {
     char tsbuf[32];
     get_iso8601_utc(tsbuf, sizeof(tsbuf));
 
-    char buf[128];  // Aumentamos tamaño para incluir timestamp
+    char buf[128];
     int len;
 
-    // 1) Publicar distancia
-    len = snprintf(buf, sizeof(buf), "{\"value\": %.2f, \"timestamp\": \"%s\"}", d->distance_cm, tsbuf);
+    float distance_cm = (float)(esp_random() % 100);
+    float weight_kg   = (float)(esp_random() % 20);
+    float laser_mm    = (float)(esp_random() % 500);
+
+    len = snprintf(buf, sizeof(buf), "{\"value\": %.2f, \"timestamp\": \"%s\"}", distance_cm, tsbuf);
     esp_mqtt_client_publish(mqtt_client, MQTT_TOPIC_ULTRASONIC, buf, len, 1, 0);
     ESP_LOGI(TAG, "Published to %s: %s", MQTT_TOPIC_ULTRASONIC, buf);
 
-    // 2) Publicar peso
-    len = snprintf(buf, sizeof(buf), "{\"value\": %.2f, \"timestamp\": \"%s\"}", d->weight_kg, tsbuf);
+    len = snprintf(buf, sizeof(buf), "{\"value\": %.2f, \"timestamp\": \"%s\"}", weight_kg, tsbuf);
     esp_mqtt_client_publish(mqtt_client, MQTT_TOPIC_WEIGHT, buf, len, 1, 0);
     ESP_LOGI(TAG, "Published to %s: %s", MQTT_TOPIC_WEIGHT, buf);
 
-    // 3) Publicar láser
-    len = snprintf(buf, sizeof(buf), "{\"value\": %.2f, \"timestamp\": \"%s\"}", d->laser_mm, tsbuf);
+    len = snprintf(buf, sizeof(buf), "{\"value\": %.2f, \"timestamp\": \"%s\"}", laser_mm, tsbuf);
     esp_mqtt_client_publish(mqtt_client, MQTT_TOPIC_LASER, buf, len, 1, 0);
     ESP_LOGI(TAG, "Published to %s: %s", MQTT_TOPIC_LASER, buf);
 }
