@@ -34,6 +34,8 @@ static void get_iso8601_utc(char *out, size_t out_size);
 void communication_init(void) {
     comm_event_group = xEventGroupCreate();
 
+    ESP_LOGI(TAG, "Initializing communication module..."); 
+
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
@@ -46,7 +48,13 @@ void communication_init(void) {
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL, &wifi_any_id_handle));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL, &ip_got_ip_handle));
 
-    wifi_config_t wifi_cfg = { .sta = { .ssid = "", .password = "", .threshold.authmode = WIFI_AUTH_WPA2_PSK } };
+    wifi_config_t wifi_cfg = {
+        .sta = {
+            .ssid = "",
+            .password = "",
+            .threshold.authmode = WIFI_AUTH_WPA2_PSK
+        }
+    };
     strncpy((char*)wifi_cfg.sta.ssid, WIFI_SSID, sizeof(wifi_cfg.sta.ssid));
     strncpy((char*)wifi_cfg.sta.password, WIFI_PASSWORD, sizeof(wifi_cfg.sta.password));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -65,6 +73,7 @@ void communication_init(void) {
     esp_mqtt_client_start(mqtt_client);
     mqtt_started = true;
 }
+
 
 void communication_wait_for_connection(void) {
     xEventGroupWaitBits(comm_event_group, WIFI_CONNECTED_BIT | MQTT_CONNECTED_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
@@ -116,10 +125,13 @@ void communication_publish(const sensor_data_t* data) {
 
     snprintf(msg, sizeof(msg), "{\"value\": %.2f, \"timestamp\": \"%s\"}", data->distance_cm, ts);
     esp_mqtt_client_publish(mqtt_client, MQTT_TOPIC_ULTRASONIC, msg, 0, 1, 0);
+    ESP_LOGI(TAG, "Publicado en %s: %s", MQTT_TOPIC_ULTRASONIC, msg);
 
     snprintf(msg, sizeof(msg), "{\"value\": %.2f, \"timestamp\": \"%s\"}", data->weight_kg, ts);
     esp_mqtt_client_publish(mqtt_client, MQTT_TOPIC_WEIGHT, msg, 0, 1, 0);
+    ESP_LOGI(TAG, "Publicado en %s: %s", MQTT_TOPIC_WEIGHT, msg);
 
     snprintf(msg, sizeof(msg), "{\"value\": %.2f, \"timestamp\": \"%s\"}", data->laser_mm, ts);
     esp_mqtt_client_publish(mqtt_client, MQTT_TOPIC_LASER, msg, 0, 1, 0);
+    ESP_LOGI(TAG, "Publicado en %s: %s", MQTT_TOPIC_LASER, msg);
 }
