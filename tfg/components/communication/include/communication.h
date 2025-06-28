@@ -1,11 +1,13 @@
-#pragma once
+#pragma once    // Le indica al compilador que procese este fichero solo una vez por compilacion
 
 #include <esp_err.h>
 #include "sensors.h"
-//Inicializa wifi y mqtt y gestiona eventos para saber cuando está conectado
+
+// Arranca la interfaz Wi-Fi y el cliente MQTT
+// Registra los manejadores de evento (connected, disconnected) para gestionar el estado de la conexión.
 void communication_init(void);
 
-//Esta función se encarga de bloquear hasta que wifi y mqtt estén conectados
+// // Bloquea la ejecución hasta que tanto Wi-Fi como MQTT confirmen conexión exitosa
 void communication_wait_for_connection(void);
 
 //Publica los datos de los sensores en 3 topics diferentes: sensors/ultrasonic, sensors/weight y sensors/laser

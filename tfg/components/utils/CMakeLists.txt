@@ -1,6 +1,6 @@
 idf_component_register(
-    SRCS "utils.c"
-    INCLUDE_DIRS "include"
-    REQUIRES sensors log
+    SRCS "utils.c"                 # Fichero fuente principal del módulo de utils
+    INCLUDE_DIRS "include"         # Carpeta con sus archivos .h 
+    REQUIRES sensors log           # Componentes externos necesarios para compilar y enlazar
 )
 
