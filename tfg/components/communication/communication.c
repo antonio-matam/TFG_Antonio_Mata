@@ -12,8 +12,8 @@
 
 #include "communication_secrets.h"                     // Aquí están ssid, contraseña y uri del broker mqtt
 
-static const char* TAG = "communication";              // Etiqueta que usará ESP_LOGx para clasificar mensajes de este módulo
-static esp_mqtt_client_handle_t mqtt_client = NULL;    // Puntero al cliente MQTT una vez inicializado
+static const char* TAG = "communication";              // Etiqueta que usará esp_logx para clasificar mensajes de este módulo
+static esp_mqtt_client_handle_t mqtt_client = NULL;    // Puntero al cliente mqtt una vez inicializado
 static bool mqtt_started = false;                      // Indica si ya se ha arrancado el cliente mqtt
 
 // Grupo de eventos para coordinar estado wifi y mqtt
@@ -29,8 +29,8 @@ static const char* MQTT_TOPIC_LASER      = "sensors/laser";
 // Prototipos de funciones internas
 static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 static void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
-static void init_sntp_and_wait(void);                    // Arranca SNTP y espera a sincronizar hora
-static void get_iso8601_utc(char *out, size_t out_size); // Rellena out con timestamp UTC en formato ISO8601
+static void init_sntp_and_wait(void);                    // Arranca sntp y espera a sincronizar hora
+static void get_iso8601_utc(char *out, size_t out_size); // Rellena out con timestamp utc en formato iso8601
 
 void communication_init(void) {
     // Crea el grupo de eventos para coordinar wifi y mqtt
@@ -60,7 +60,7 @@ void communication_init(void) {
         }
     };
 
-    // Copiar SSID y password con límite de tamaño
+    // Copiar ssid y password con límite de tamaño
     strncpy((char*)wifi_cfg.sta.ssid, WIFI_SSID, sizeof(wifi_cfg.sta.ssid));
     strncpy((char*)wifi_cfg.sta.password, WIFI_PASSWORD, sizeof(wifi_cfg.sta.password));
 
