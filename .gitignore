@@ -1,39 +1,14 @@
-# ================================
-# Ignorar configuración local de ESP-IDF
-# ================================
-sdkconfig
-sdkconfig.old
-
-# ================================
-# Archivos de build y CMake
-# ================================
-build/
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-compile_commands.json
-project_description.json
-
-# ================================
-# Binarios y mapas generados
-# ================================
-*.bin
-*.elf
-*.map
-
-# ================================
-# IDEs y editores
-# ================================
+# IDEs y editores (ajusta según tus herramientas)
 .vscode/
-.idea/
-*.code-workspace
-*.swp
 
-# ================================
-# Variables de entorno y credenciales locales
-# ================================
-.env
-wifi_credentials.h
+# ESP-IDF: configuración local y build
+tfg/sdkconfig
+tfg/sdkconfig.old
+tfg/build/
+tfg/CMakeCache.txt
+tfg/CMakeFiles/
+tfg/compile_commands.json
+tfg/project_description.json
 
-# Ignorar tu header real de credenciales
+# Credenciales locales
 tfg/components/communication/include/communication_secrets.h
