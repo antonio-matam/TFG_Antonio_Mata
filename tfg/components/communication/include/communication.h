@@ -1,16 +1,9 @@
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> c9e17441fbe05838da6a2e3ba14cdb532dadcb14
 #pragma once    // Le indica al compilador que procese este fichero solo una vez por compilacion
 
 #include <esp_err.h>
 #include "sensors.h"
-<<<<<<< HEAD
-=======
 #include "sdkconfig.h"
 
->>>>>>> c9e17441fbe05838da6a2e3ba14cdb532dadcb14
 
 // Arranca la interfaz Wi-Fi y el cliente MQTT
 // Registra los manejadores de evento (connected, disconnected) para gestionar el estado de la conexión.
@@ -21,34 +14,3 @@ void communication_wait_for_connection(void);
 
 //Publica los datos de los sensores en 3 topics diferentes: sensors/ultrasonic, sensors/weight y sensors/laser
 void communication_publish(const sensor_data_t* data);
-
-
-
-
-
-
-<<<<<<< HEAD
-=======
-=======
-#pragma once    // Le indica al compilador que procese este fichero solo una vez por compilacion
-
-#include <esp_err.h>
-#include "sensors.h"
-
-// Arranca la interfaz Wi-Fi y el cliente MQTT
-// Registra los manejadores de evento (connected, disconnected) para gestionar el estado de la conexión.
-void communication_init(void);
-
-// // Bloquea la ejecución hasta que tanto Wi-Fi como MQTT confirmen conexión exitosa
-void communication_wait_for_connection(void);
-
-//Publica los datos de los sensores en 3 topics diferentes: sensors/ultrasonic, sensors/weight y sensors/laser
-void communication_publish(const sensor_data_t* data);
-
-
-
-
-
-
->>>>>>> 574321047df6fc4b22468f4dd7fc3a49a772ef77
->>>>>>> c9e17441fbe05838da6a2e3ba14cdb532dadcb14
