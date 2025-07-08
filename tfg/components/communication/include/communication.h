@@ -2,6 +2,8 @@
 
 #include <esp_err.h>
 #include "sensors.h"
+#include "sdkconfig.h"
+
 
 // Arranca la interfaz Wi-Fi y el cliente MQTT
 // Registra los manejadores de evento (connected, disconnected) para gestionar el estado de la conexión.
